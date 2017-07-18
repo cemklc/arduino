@@ -4,7 +4,7 @@
 #define DATA_PIN 11 // LEDlerin data inputunun bağlı olduğu arduino pini
 #define CLOCK_PIN 12  // LEDlerin clock inputunun bağlı olduğu arduino pini
 #define dtime 10 // Yanıp sönme hızı
-#define sdtime 20 // Kayma hızı
+#define sdtime 80 // Kayma hızı
 #define LEFT_HEADER_START 2 // Sol header ledinin başladığı numara
 #define LEFT_HEADER_END 4 // Sol header ledinin bittiği numara
 #define RIGHT_HEADER_START 10
@@ -67,17 +67,17 @@ void processing() {
 void moving() {
   uint8_t cc = 0;
   while (cc <= (NUM_LEDS ) / 2 ) {
-    for (uint8_t i = 0; i < (NUM_LEDS - TOTAL_HEADERS + 1) / 2; i++) {
-      if (NUM_LEDS / 2 - cc <= LEFT_HEADER_END && NUM_LEDS / 2 - cc >= LEFT_HEADER_START ) {
-        continue;
-      }
-      leds[NUM_LEDS / 2 - cc] = CRGB(0, 100 , 0 );
-      leds[NUM_LEDS / 2 + cc] = CRGB(0, 100 , 0 );
-      FastLED.show();
-      delay(sdtime);
-      leds[NUM_LEDS / 2 - cc] = CRGB(0, 0 , 0 );
-      leds[NUM_LEDS / 2 + cc] = CRGB(0, 0 , 0 );
+    if (NUM_LEDS / 2 - cc <= LEFT_HEADER_END && NUM_LEDS / 2 - cc >= LEFT_HEADER_START ) {
+      cc++;
+      continue;
     }
+    leds[NUM_LEDS / 2 - cc] = CRGB(0, 100 , 0 );
+    leds[NUM_LEDS / 2 + cc] = CRGB(0, 100 , 0 );
+    FastLED.show();
+    delay(sdtime);
+    leds[NUM_LEDS / 2 - cc] = CRGB(0, 0 , 0 );
+    leds[NUM_LEDS / 2 + cc] = CRGB(0, 0 , 0 );
+
     cc++;
   }
 }
@@ -87,17 +87,17 @@ void moving() {
 void approaching() {
   uint8_t cc = 0;
   while (cc <= (NUM_LEDS ) / 2 ) {
-    for (uint8_t i = 0; i < (NUM_LEDS - TOTAL_HEADERS + 1) / 2; i++) {
-      if (NUM_LEDS / 2 - cc <= LEFT_HEADER_END && NUM_LEDS / 2 - cc >= LEFT_HEADER_START ) {
-        continue;
-      }
-      leds[NUM_LEDS / 2 - cc] = CRGB(0, 100 , 100 );
-      leds[NUM_LEDS / 2 + cc] = CRGB(0, 100 , 100 );
-      FastLED.show();
-      delay(sdtime);
-      leds[NUM_LEDS / 2 - cc] = CRGB(0, 0 , 0 );
-      leds[NUM_LEDS / 2 + cc] = CRGB(0, 0 , 0 );
+    if (NUM_LEDS / 2 - cc <= LEFT_HEADER_END && NUM_LEDS / 2 - cc >= LEFT_HEADER_START ) {
+      cc++;
+      continue;
     }
+    leds[NUM_LEDS / 2 - cc] = CRGB(0, 100 , 100 );
+    leds[NUM_LEDS / 2 + cc] = CRGB(0, 100 , 100 );
+    FastLED.show();
+    delay(sdtime);
+    leds[NUM_LEDS / 2 - cc] = CRGB(0, 0 , 0 );
+    leds[NUM_LEDS / 2 + cc] = CRGB(0, 0 , 0 );
+
     cc++;
   }
 }
@@ -302,10 +302,10 @@ void loop() {
     case 'p':
       Serial.print("Processing\n");
       clearleds();
+      headlight();
       while (1) {
         if (Serial.available() > 0)
           break;
-        headlight();
         processing();
       }
       break;
@@ -313,10 +313,10 @@ void loop() {
     case 'm':
       Serial.print("Moving\n");
       clearleds();
+      headlight();
       while (1) {
         if (Serial.available() > 0)
           break;
-        headlight();
         moving();
       }
       break;
@@ -324,10 +324,10 @@ void loop() {
     case 'a':
       Serial.print("Approaching\n");
       clearleds();
+      headlight();
       while (1) {
         if (Serial.available() > 0)
           break;
-        headlight();
         approaching();
       }
       break;
@@ -335,10 +335,10 @@ void loop() {
     case 'l':
       Serial.print("Loading/Unloading\n");
       clearleds();
+      headlight();
       while (1) {
         if (Serial.available() > 0)
           break;
-        headlight();
         load();
       }
       break;
@@ -346,10 +346,10 @@ void loop() {
     case 'e':
       Serial.print("Emergency Stop\n");
       clearleds();
+      headlight();
       while (1) {
         if (Serial.available() > 0)
           break;
-        headlight();
         estop();
       }
       break;
@@ -412,7 +412,7 @@ void loop() {
       if (Serial.available() > 0)
         break;
       for (uint8_t i = 0; i < NUM_LEDS; i++) {
-        if (i >= LEFT_HEADER_START + 1 && i <= LEFT_HEADER_END || i >= RIGHT_HEADER_START && i <= RIGHT_HEADER_END - 1 ) { // +1 ve -1ler kaçar header eksik yanacağını belirtir
+        if (i >= LEFT_HEADER_START + 1 && i <= LEFT_HEADER_END || i >= RIGHT_HEADER_START && i <= RIGHT_HEADER_END - 1 ) {
           leds[i] = CRGB(100, 100 , 100 );
         }
         else
