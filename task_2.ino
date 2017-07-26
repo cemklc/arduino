@@ -26,51 +26,49 @@ void setup() {
 
 void loop() {
 
-  if (Serial.available() > 0) {
-    String inByte = Serial.readString();
-    int label = inByte.indexOf(':');
-    String colorcode = inByte.substring(0, label);
-    String patterncode = inByte.substring(label + 1);
-    coll = colorcode.toInt();
-    patt = patterncode.toInt();
-    switch (coll) {
-      case 1:
-        color = 0;    //BLUE
-        break;
-      case 2:
-        color = 160;   //RED
-        break;
-      case 3:
-        color = 100;  //GREEN
-        break;
-      case 4:
-        color = 80;  //TURKUAZ
-        break;
-      case 5:
-        color = 90;  //YOSUN YESILI
-        break;
-      case 6:
-        color = 140;  //SARI
-        break;
-      case 7:
-        color = 151;  //TURUNCU
-        break;
-      case 8:
-        color = 185;  //PEMBE
-        break;
-      case 9:
-        color = 120;  //YESIL-SARI
-        break;
-      case 10:
-        color = 230;  //EFLATUN
-        break;
-      case 11:
-        color = 63;  //ACIK MAVI
-        break;
-      default:
-        headlight();
-        break;
-    }
+  String inByte = Serial.readString();
+  int label = inByte.indexOf(':');
+  String colorcode = inByte.substring(0, label);
+  String patterncode = inByte.substring(label + 1);
+  coll = colorcode.toInt();
+  patt = patterncode.toInt();
+  switch (coll) {
+    case 1:
+      color = 0;    //BLUE
+      break;
+    case 2:
+      color = 160;   //RED
+      break;
+    case 3:
+      color = 100;  //GREEN
+      break;
+    case 4:
+      color = 80;  //TURKUAZ
+      break;
+    case 5:
+      color = 90;  //YOSUN YESILI
+      break;
+    case 6:
+      color = 140;  //SARI
+      break;
+    case 7:
+      color = 151;  //TURUNCU
+      break;
+    case 8:
+      color = 185;  //PEMBE
+      break;
+    case 9:
+      color = 120;  //YESIL-SARI
+      break;
+    case 10:
+      color = 230;  //EFLATUN
+      break;
+    case 11:
+      color = 63;  //ACIK MAVI
+      break;
+    default:
+      idle();
+      break;
   }
 
   switch (patt) {
@@ -128,18 +126,18 @@ void loop() {
         backslide();
       }
       break;
-    case 7:       //BACK SLIDE
+    case 7:       //SOLID
       clearleds();
       headlight();
       while (1) {
         if (Serial.available() > 0)
           break;
-        constant();
+        solid();
       }
       break;
     default:
       clearleds();
-      headlight();
+      idle();
       while (1) {
         if (Serial.available() > 0)
           break;
@@ -220,6 +218,16 @@ void backslide() {
 void headlight() {
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     if (i >= LEFT_HEADER_START && i <= LEFT_HEADER_END || i >= RIGHT_HEADER_START && i <= RIGHT_HEADER_END ) {
+      leds[i] = CRGB(100, 100 , 100 );
+    }
+  }
+  FastLED.show();
+}
+
+//IDLE
+void idle() {
+  for (uint8_t i = 0; i < NUM_LEDS; i++) {
+    if (i >= LEFT_HEADER_START + 1 && i <= LEFT_HEADER_END || i >= RIGHT_HEADER_START + 1 && i <= RIGHT_HEADER_END ) {
       leds[i] = CRGB(100, 100 , 100 );
     }
   }
@@ -310,7 +318,7 @@ void fullfade() {
 }
 
 //SABIT
-void constant() {
+void solid() {
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     leds[i] = CHSV(color, 255 , 200 );
   }
