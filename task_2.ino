@@ -61,12 +61,18 @@ void loop() {
       case 9:
         color = 120;  //YESIL-SARI
         break;
+      case 10:
+        color = 230;  //EFLATUN
+        break;
+      case 11:
+        color = 63;  //ACIK MAVI
+        break;
       default:
         headlight();
         break;
     }
   }
-  
+
   switch (patt) {
     case 1:       //FADE
       clearleds();
@@ -104,8 +110,40 @@ void loop() {
         turnright();
       }
       break;
-    default:
+    case 5:       //FULL FADE
+      clearleds();
       headlight();
+      while (1) {
+        if (Serial.available() > 0)
+          break;
+        fullfade();
+      }
+      break;
+    case 6:       //BACK SLIDE
+      clearleds();
+      headlight();
+      while (1) {
+        if (Serial.available() > 0)
+          break;
+        backslide();
+      }
+      break;
+    case 7:       //BACK SLIDE
+      clearleds();
+      headlight();
+      while (1) {
+        if (Serial.available() > 0)
+          break;
+        constant();
+      }
+      break;
+    default:
+      clearleds();
+      headlight();
+      while (1) {
+        if (Serial.available() > 0)
+          break;
+      }
       break;
   }
 }
@@ -154,6 +192,25 @@ void slide() {
     delay(sdtime);
     leds[NUM_LEDS / 2 - cc] = CHSV(color, 255 , 0 );
     leds[NUM_LEDS / 2 + cc] = CHSV(color, 255 , 0 );
+
+    cc++;
+  }
+}
+
+//BACK-SLIDE
+void backslide() {
+  uint8_t cc = 0;
+  while (cc <= (NUM_LEDS ) / 2 ) {
+    if (cc <= LEFT_HEADER_END && cc >= LEFT_HEADER_START ) {
+      cc++;
+      continue;
+    }
+    leds[cc] = CHSV(color, 255 , 200 );
+    leds[NUM_LEDS - cc - 1] = CHSV(color, 255 , 200 );
+    FastLED.show();
+    delay(sdtime);
+    leds[cc] = CHSV(color, 255 , 0 );
+    leds[NUM_LEDS - cc - 1] = CHSV(color, 255 , 0 );
 
     cc++;
   }
@@ -228,4 +285,35 @@ void turnright() {
     FastLED.show();
     delay(dtime / 5);
   }
+}
+
+//FULL FADE
+void fullfade() {
+  for (uint8_t val = 0; val < 200; val++) {
+    for (uint8_t i = 0; i < NUM_LEDS; i++) {
+      leds[i] = CHSV(color, 255 , val );
+    }
+    if (Serial.available() > 0)
+      break;
+    FastLED.show();
+    delay(dtime / 5);
+  }
+  for (uint8_t val = 200; val > 0; val--) {
+    for (uint8_t i = 0; i < NUM_LEDS; i++) {
+      leds[i] = CHSV(color, 255 , val );
+    }
+    if (Serial.available() > 0)
+      break;
+    FastLED.show();
+    delay(dtime / 5);
+  }
+}
+
+//SABIT
+void constant() {
+  for (uint8_t i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CHSV(color, 255 , 200 );
+  }
+  FastLED.show();
+  delay(dtime);
 }
