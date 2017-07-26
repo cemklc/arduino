@@ -14,6 +14,7 @@
 
 // Define the array of leds
 CRGB leds[NUM_LEDS];
+
 uint8_t coll = 0;
 uint8_t color = 0;
 uint8_t patt = 0;
@@ -22,7 +23,6 @@ void setup() {
   Serial.begin(9600);
   FastLED.addLeds<APA102, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
 }
-
 
 void loop() {
 
@@ -33,8 +33,6 @@ void loop() {
     String patterncode = inByte.substring(label + 1);
     coll = colorcode.toInt();
     patt = patterncode.toInt();
-    Serial.print(coll);
-    Serial.print(patt);
     switch (coll) {
       case 1:
         color = 0;    //BLUE
@@ -68,6 +66,7 @@ void loop() {
         break;
     }
   }
+  
   switch (patt) {
     case 1:       //FADE
       clearleds();
@@ -109,10 +108,9 @@ void loop() {
       headlight();
       break;
   }
-
 }
-//FADE
 
+//FADE
 void fade() {
   for (uint8_t val = 0; val < 255; val++) {
     for (uint8_t i = 0; i < NUM_LEDS; i++) {
@@ -142,10 +140,7 @@ void fade() {
   }
 }
 
-
 //SLIDE
-
-
 void slide() {
   uint8_t cc = 0;
   while (cc <= (NUM_LEDS ) / 2 ) {
@@ -165,7 +160,6 @@ void slide() {
 }
 
 //SETS HEARDER LEDS WHITE
-
 void headlight() {
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     if (i >= LEFT_HEADER_START && i <= LEFT_HEADER_END || i >= RIGHT_HEADER_START && i <= RIGHT_HEADER_END ) {
@@ -176,7 +170,6 @@ void headlight() {
 }
 
 //CLEAR ALL LEDS
-
 void clearleds() {
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     leds[i] = CRGB(0, 0 , 0 );
@@ -210,8 +203,8 @@ void turnleft() {
     delay(dtime / 5);
   }
 }
-// RIGHT SIGNAL - HALF FADE
 
+// RIGHT SIGNAL - HALF FADE
 void turnright() {
   for (uint8_t val = 0; val < 200; val++) {
     for (uint8_t i = NUM_LEDS / 2; i < NUM_LEDS; i++) {
@@ -236,4 +229,3 @@ void turnright() {
     delay(dtime / 5);
   }
 }
-
