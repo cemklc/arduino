@@ -4,7 +4,10 @@
 #define DATA_PIN 11 // LEDlerin data inputunun bağlı olduğu arduino pini
 #define CLOCK_PIN 12  // LEDlerin clock inputunun bağlı olduğu arduino pini
 #define dtime 10 // Yanıp sönme hızı
+#define ftime 2 // Yanıp sönme hızı
+#define fftime 2 // Yanıp sönme hızı
 #define sdtime 80 // Kayma hızı
+#define ttime 2 // Sinyal hızı
 #define LEFT_HEADER_START 2 // Sol header ledinin başladığı numara
 #define LEFT_HEADER_END 4 // Sol header ledinin bittiği numara
 #define RIGHT_HEADER_START 10
@@ -26,12 +29,10 @@ void setup() {
 
 void loop() {
 
-  String inByte = Serial.readString();
-  int label = inByte.indexOf(':');
-  String colorcode = inByte.substring(0, label);
-  String patterncode = inByte.substring(label + 1);
-  coll = colorcode.toInt();
-  patt = patterncode.toInt();
+  if (Serial.available() > 0) {
+    coll = Serial.parseInt();
+    patt = Serial.parseInt();
+  }
   switch (coll) {
     case 1:
       color = 0;    //BLUE
@@ -159,7 +160,7 @@ void fade() {
     if (Serial.available() > 0)
       break;
     FastLED.show();
-    delay(dtime / 5);
+    delay(ftime);
   }
   for (uint8_t val = 255; val > 0; val--) {
     for (uint8_t i = 0; i < NUM_LEDS; i++) {
@@ -172,7 +173,7 @@ void fade() {
     if (Serial.available() > 0)
       break;
     FastLED.show();
-    delay(dtime / 5);
+    delay(ftime);
   }
 }
 
@@ -245,7 +246,7 @@ void clearleds() {
 
 // LEFT SIGNAL - HALF FADE
 void turnleft() {
-  for (uint8_t val = 0; val < 200; val++) {
+  for (uint8_t val = 0; val < 255; val++) {
     for (uint8_t i = 0; i < NUM_LEDS / 2 + 1; i++) {
       if (i == LEFT_HEADER_START )
         i = i + HEADER_COUNT;
@@ -254,9 +255,9 @@ void turnleft() {
     if (Serial.available() > 0)
       break;
     FastLED.show();
-    delay(dtime / 5);
+    delay(ttime);
   }
-  for (uint8_t val = 200; val > 0; val--) {
+  for (uint8_t val = 255; val > 0; val--) {
     for (uint8_t i = 0; i < NUM_LEDS / 2 + 1; i++) {
       if (i == LEFT_HEADER_START )
         i = i + HEADER_COUNT;
@@ -265,13 +266,13 @@ void turnleft() {
     if (Serial.available() > 0)
       break;
     FastLED.show();
-    delay(dtime / 5);
+    delay(ttime);
   }
 }
 
 // RIGHT SIGNAL - HALF FADE
 void turnright() {
-  for (uint8_t val = 0; val < 200; val++) {
+  for (uint8_t val = 0; val < 255; val++) {
     for (uint8_t i = NUM_LEDS / 2; i < NUM_LEDS; i++) {
       if (i == RIGHT_HEADER_START )
         i = i + HEADER_COUNT;
@@ -280,9 +281,9 @@ void turnright() {
     if (Serial.available() > 0)
       break;
     FastLED.show();
-    delay(dtime / 5);
+    delay(ttime);
   }
-  for (uint8_t val = 200; val > 0; val--) {
+  for (uint8_t val = 255; val > 0; val--) {
     for (uint8_t i = NUM_LEDS / 2; i < NUM_LEDS; i++) {
       if (i == RIGHT_HEADER_START )
         i = i + HEADER_COUNT;
@@ -291,29 +292,29 @@ void turnright() {
     if (Serial.available() > 0)
       break;
     FastLED.show();
-    delay(dtime / 5);
+    delay(ttime);
   }
 }
 
 //FULL FADE
 void fullfade() {
-  for (uint8_t val = 0; val < 200; val++) {
+  for (uint8_t val = 0; val < 255; val++) {
     for (uint8_t i = 0; i < NUM_LEDS; i++) {
       leds[i] = CHSV(color, 255 , val );
     }
     if (Serial.available() > 0)
       break;
     FastLED.show();
-    delay(dtime / 5);
+    delay(fftime);
   }
-  for (uint8_t val = 200; val > 0; val--) {
+  for (uint8_t val = 255; val > 0; val--) {
     for (uint8_t i = 0; i < NUM_LEDS; i++) {
       leds[i] = CHSV(color, 255 , val );
     }
     if (Serial.available() > 0)
       break;
     FastLED.show();
-    delay(dtime / 5);
+    delay(fftime);
   }
 }
 
