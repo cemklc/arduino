@@ -1,0 +1,599 @@
+#include "FastLED.h"
+
+//ON PANEL BILGILER
+#define NUM_LEDS 15  // Toplam LED sayısı
+#define DATA_PIN 11 // ON PANEL DATA PIN
+#define CLOCK_PIN 12  // ARKA PANEL CLOCK PIN
+#define LEFT_HEADER_START 2 // Sol header ledinin başladığı numara
+#define LEFT_HEADER_END 4 // Sol header ledinin bittiği numara
+#define RIGHT_HEADER_START 10
+#define RIGHT_HEADER_END 12
+#define HEADER_COUNT 3 // Tek bir taraftaki header led sayısı
+CRGB leds[NUM_LEDS];
+
+// ARKA PANEL BİLGİLER
+#define NUM_REARLEDS 42  // Toplam LED sayısı
+#define REAR_DATA_PIN 9 // LEDlerin data inputunun bağlı olduğu arduino pini//9           //11 for arduino test 
+#define REAR_CLOCK_PIN 8  // LEDlerin clock inputunun bağlı olduğu arduino pini//8       //12
+#define STOP_START 11 // Sol STOP_LED ledinin başladığı numara
+#define STOP_END 30
+CRGB REARleds[NUM_REARLEDS];
+
+#define ftime 2 // Fade Yanıp sönme hızı
+#define fftime 2 // Full Fade Yanıp sönme hızı
+#define sdtime 50 // Kayma hızı
+#define ttime 2 // Sinyal hızı
+
+uint8_t coll = 0;
+uint8_t color = 0;
+uint8_t patt = 0;
+
+void setup() {
+  Serial.begin(9600);
+  FastLED.addLeds<APA102, REAR_DATA_PIN, REAR_CLOCK_PIN, RGB>(REARleds, NUM_REARLEDS); // REAR LEDS INITIALIZE
+  FastLED.addLeds<APA102, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS); // FRONT LEDS INITIALIZE
+}
+
+void loop() {
+
+  if (Serial.available() >= 3) {
+    if (Serial.read() == 255)
+    {
+      coll = Serial.read();
+      patt = Serial.read();
+    }
+  }
+
+  /*if (Serial.available() > 3) {
+    if (Serial.read()==255)
+    {
+    coll = Serial.read();
+    patt = Serial.read();
+    }
+    }*/
+  switch (coll) {
+    case 1:
+      color = 0;    //BLUE
+      break;
+    case 2:
+      color = 160;   //RED
+      break;
+    case 3:
+      color = 100;  //GREEN
+      break;
+    case 4:
+      color = 80;  //TURKUAZ
+      break;
+    case 5:
+      color = 90;  //YOSUN YESILI
+      break;
+    case 6:
+      color = 140;  //SARI
+      break;
+    case 7:
+      color = 151;  //TURUNCU
+      break;
+    case 8:
+      color = 185;  //PEMBE
+      break;
+    case 9:
+      color = 130;  //YESIL-SARI
+      break;
+    case 10:
+      color = 230;  //EFLATUN
+      break;
+    case 11:
+      color = 63;  //ACIK MAVI
+      break;
+    default:
+      idle();
+      REAR_idle();
+      break;
+  }
+
+  switch (patt) {
+    case 1:       //FADE
+      clearleds();
+      stoplight();
+      headlight();
+      while (1) {
+        if (Serial.available() > 0)
+          break;
+        fade();
+      }
+      break;
+    case 2:       //SLIDE-- FRONT TO BACK
+      clearleds();
+      stoplight();
+      headlight();
+      while (1) {
+        slide();
+        /*REAR_backslide();*/
+        if (Serial.available() > 0)
+          break;
+      }
+      break;
+    case 3:       //LEFT SIGNAL
+      clearleds();
+      stoplight();
+      headlight();
+      while (1) {
+        if (Serial.available() > 0)
+          break;
+        turnleft();
+      }
+      break;
+    case 4:       //RIGHT SIGNAL
+      clearleds();
+      stoplight();
+      headlight();
+      while (1) {
+        if (Serial.available() > 0)
+          break;
+        turnright();
+      }
+      break;
+    case 5:       //FULL FADE
+      clearleds();
+      stoplight();
+      headlight();
+      while (1) {
+        if (Serial.available() > 0)
+          break;
+        fullfade();
+      }
+      break;
+    case 6:       // SLIDE -- BACK TO FRONT
+      clearleds();
+      stoplight();
+      headlight();
+      while (1) {
+        //rear_slide();
+        backslide();
+
+        break;
+      }
+      break;
+    case 7:       //SOLID
+      clearleds();
+      stoplight();
+      headlight();
+      while (1) {
+        if (Serial.available() > 0)
+          break;
+        solid();
+      }
+      break;
+    default:
+      clearleds();
+      REAR_idle();
+      idle();
+      while (1) {
+        if (Serial.available() > 0)
+          break;
+      }
+      break;
+  }
+}
+
+//SLIDE
+void slide() {
+  uint8_t scolor = color;
+  uint8_t cc = 0;
+  while (cc <= (NUM_LEDS ) / 2 ) {
+    if (NUM_LEDS / 2 - cc <= LEFT_HEADER_END && NUM_LEDS / 2 - cc >= LEFT_HEADER_START ) {
+      leds[NUM_LEDS / 2 + cc] = CHSV(scolor, 255 , 0 );
+      leds[NUM_LEDS / 2 - cc] = CHSV(scolor, 255 , 0 );
+      FastLED.show();
+      cc++;
+      continue;
+    }
+    if (cc == 0) {
+      leds[NUM_LEDS / 2 + cc] = CHSV(scolor, 255 , 255 );
+      leds[NUM_LEDS / 2 - cc] = CHSV(scolor, 255 , 255 );
+      FastLED.show();
+      delay(sdtime);
+      leds[NUM_LEDS / 2 + cc] = CHSV(scolor, 255 , 0 );
+      leds[NUM_LEDS / 2 - cc] = CHSV(scolor, 255 , 0 );
+      cc++;
+      continue;
+    }
+    leds[NUM_LEDS / 2 - cc - 1] = CHSV(scolor, 255 , 255 );
+    leds[NUM_LEDS / 2 - cc] = CHSV(scolor, 255 , 255 );
+    leds[NUM_LEDS / 2 + cc] = CHSV(scolor, 255 , 255 );
+    leds[NUM_LEDS / 2 + cc + 1] = CHSV(scolor, 255 , 255 );
+    FastLED.show();
+    delay(sdtime);
+    leds[NUM_LEDS / 2 - cc] = CHSV(scolor, 255 , 0 );
+    leds[NUM_LEDS / 2 + cc] = CHSV(scolor, 255 , 0 );
+    cc++;
+  }
+  cc = 0;
+  while (cc <= (NUM_REARLEDS ) / 2 ) {
+    if (cc >= STOP_START ) {
+      break;
+    }
+    if (cc == 0 ) {
+      REARleds[cc] = CHSV(scolor, 255 , 255 );
+      REARleds[NUM_REARLEDS - cc - 1 ] = CHSV(scolor, 255 , 255 );
+      FastLED.show();
+      delay(sdtime );
+      REARleds[cc] = CHSV(scolor, 255 , 0 );
+      REARleds[NUM_REARLEDS - cc - 1  ] = CHSV(scolor, 255 , 0 );
+      cc++;
+      continue;
+    }
+    REARleds[cc] = CHSV(scolor, 255 , 255 );
+    REARleds[cc - 1] = CHSV(scolor, 255 , 255 );
+    REARleds[NUM_REARLEDS - cc - 1 ] = CHSV(scolor, 255 , 255 );
+    REARleds[NUM_REARLEDS - cc  ] = CHSV(scolor, 255 , 255 );
+    FastLED.show();
+    delay(sdtime );
+    REARleds[cc] = CHSV(scolor, 255 , 0 );
+    REARleds[cc - 1] = CHSV(scolor, 255 , 0 );
+    REARleds[NUM_REARLEDS - cc - 1  ] = CHSV(scolor, 255 , 0 );
+    REARleds[NUM_REARLEDS - cc   ] = CHSV(scolor, 255 , 0 );
+    if (cc == 10) {
+      REARleds[cc - 1] = CHSV(scolor, 255 , 255 );
+      REARleds[NUM_REARLEDS - cc  ] = CHSV(scolor, 255 , 255 );
+      FastLED.show();
+      delay(sdtime );
+      REARleds[cc - 1] = CHSV(scolor, 255 , 0 );
+      REARleds[NUM_REARLEDS - cc   ] = CHSV(scolor, 255 , 0 );
+    }
+    cc++;
+    if (Serial.available() > 0)
+      break;
+  }
+}
+
+//BACK-SLIDE
+void backslide() {
+  static uint8_t scolor = color;
+  uint8_t cc = 0;
+  while (cc <= NUM_REARLEDS  / 2 ) {
+    if (NUM_REARLEDS / 2 + cc <= STOP_END && NUM_REARLEDS / 2 - cc >= STOP_START ) {
+      cc++;
+      continue;
+    }
+    if (NUM_REARLEDS / 2 + cc == STOP_END + 1 ) {
+      REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 255 );
+      REARleds[NUM_REARLEDS / 2 + cc ] = CHSV(scolor, 255 , 255 );
+      FastLED.show();
+      delay(sdtime);
+      REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 0 );
+      REARleds[NUM_REARLEDS / 2 + cc  ] = CHSV(scolor, 255 , 0 );
+      cc++;
+      continue;
+    }
+    REARleds[NUM_REARLEDS / 2 - cc - 2] = CHSV(scolor, 255 , 255 );
+    REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 255 );
+    REARleds[NUM_REARLEDS / 2 + cc] = CHSV(scolor, 255 , 255 );
+    REARleds[NUM_REARLEDS / 2 + cc + 1] = CHSV(scolor, 255 , 255 );
+    FastLED.show();
+    delay(sdtime );
+    REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 0 );
+    REARleds[NUM_REARLEDS / 2 + cc] = CHSV(scolor, 255 , 0 );
+    cc++;
+    if (NUM_REARLEDS / 2 - cc - 1 == 0 ) {
+      REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 255 );
+      REARleds[NUM_REARLEDS / 2 + cc ] = CHSV(scolor, 255 , 255 );
+      FastLED.show();
+      delay(sdtime);
+      REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 0 );
+      REARleds[NUM_REARLEDS / 2 + cc  ] = CHSV(scolor, 255 , 0 );
+      break;
+    }
+  }
+  uint8_t cx = 0;
+  while (cx <= (NUM_LEDS ) / 2 ) {
+    if (cx <= LEFT_HEADER_END && cx >= LEFT_HEADER_START ) {
+      leds[cx - 1] = CHSV(color, 255 , 0 );
+      leds[NUM_LEDS - cx  ] = CHSV(color, 255 , 0 );
+      FastLED.show();
+      cx++;
+      continue;
+    }
+    if (cx == 0) {
+      leds[cx] = CHSV(color, 255 , 255 );
+      leds[NUM_LEDS - cx - 1] = CHSV(color, 255 , 255 );
+      FastLED.show();
+      delay(sdtime);
+      cx++;
+      continue;
+    }
+    leds[cx] = CHSV(color, 255 , 255 );
+    leds[cx - 1] = CHSV(color, 255 , 255 );
+    leds[NUM_LEDS - cx - 1] = CHSV(color, 255 , 255 );
+    leds[NUM_LEDS - cx ] = CHSV(color, 255 , 255 );
+    FastLED.show();
+    delay(sdtime);
+    leds[cx - 1] = CHSV(color, 255 , 0 );
+    leds[NUM_LEDS - cx ] = CHSV(color, 255 , 0 );
+    cx++;
+  }
+  Serial.print("Backslide while End\n");
+}
+
+//SETS HEARDER LEDS WHITE
+void headlight() {
+  for (uint8_t i = 0; i < NUM_LEDS; i++) {
+    if (i >= LEFT_HEADER_START && i <= LEFT_HEADER_END || i >= RIGHT_HEADER_START && i <= RIGHT_HEADER_END ) {
+      leds[i] = CRGB(100, 100 , 100 );
+    }
+  }
+  FastLED.show();
+}
+
+//IDLE
+void idle() {
+  for (uint8_t i = 0; i < NUM_LEDS; i++) {
+    if (i >= LEFT_HEADER_START + 1 && i <= LEFT_HEADER_END || i >= RIGHT_HEADER_START + 1 && i <= RIGHT_HEADER_END ) {
+      leds[i] = CRGB(100, 100 , 100 );
+    }
+  }
+  FastLED.show();
+}
+
+
+
+//FADE
+void fade() {
+  for (uint8_t val = 0; val < 255; val++) {
+    for (uint8_t i = 0; i < NUM_REARLEDS; i++) {
+      if (i == STOP_START )
+        i = STOP_END + 1 ;
+      REARleds[i] = CHSV(color, 255 , val );
+    }
+    for (uint8_t i = 0; i < NUM_LEDS; i++) {
+      if (i == LEFT_HEADER_START )
+        i = i + HEADER_COUNT;
+      if (i == RIGHT_HEADER_START)
+        i = i + HEADER_COUNT;
+      leds[i] = CHSV(color, 255 , val );
+    }
+    if (Serial.available() > 0)
+      break;
+    FastLED.show();
+    delay(ftime);
+  }
+  for (uint8_t val = 255; val > 0; val--) {
+    for (uint8_t i = 0; i < NUM_REARLEDS; i++) {
+      if (i == STOP_START )
+        i = STOP_END + 1 ;
+      REARleds[i] = CHSV(color, 255 , val );
+    }
+    for (uint8_t i = 0; i < NUM_LEDS; i++) {
+      if (i == LEFT_HEADER_START )
+        i = i + HEADER_COUNT;
+      if (i == RIGHT_HEADER_START)
+        i = i + HEADER_COUNT;
+      leds[i] = CHSV(color, 255 , val );
+    }
+    if (Serial.available() > 0)
+      break;
+    FastLED.show();
+    delay(ftime);
+  }
+}
+
+//rear_slide
+/*
+  void rear_slide() {
+  static uint8_t scolor = color;
+  uint8_t cc = 0;
+  while (cc <= (NUM_REARLEDS ) / 2 ) {
+    if (NUM_REARLEDS / 2 + cc <= STOP_END && NUM_REARLEDS / 2 - cc >= STOP_START ) {
+      cc++;
+      continue;
+    }
+    if (NUM_REARLEDS / 2 + cc == STOP_END + 1 ) {
+      REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 255 );
+      REARleds[NUM_REARLEDS / 2 + cc ] = CHSV(scolor, 255 , 255 );
+      FastLED.show();
+      delay(sdtime);
+      REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 0 );
+      REARleds[NUM_REARLEDS / 2 + cc  ] = CHSV(scolor, 255 , 0 );
+      cc++;
+      continue;
+    }
+    REARleds[NUM_REARLEDS / 2 - cc - 2] = CHSV(scolor, 255 , 255 );
+    REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 255 );
+    REARleds[NUM_REARLEDS / 2 + cc] = CHSV(scolor, 255 , 255 );
+    REARleds[NUM_REARLEDS / 2 + cc + 1] = CHSV(scolor, 255 , 255 );
+    FastLED.show();
+    delay(sdtime );
+    REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 0 );
+    REARleds[NUM_REARLEDS / 2 + cc] = CHSV(scolor, 255 , 0 );
+    cc++;
+    if (NUM_REARLEDS / 2 - cc - 1 == 0 ) {
+      REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 255 );
+      REARleds[NUM_REARLEDS / 2 + cc ] = CHSV(scolor, 255 , 255 );
+      FastLED.show();
+      delay(sdtime);
+      REARleds[NUM_REARLEDS / 2 - cc - 1] = CHSV(scolor, 255 , 0 );
+      REARleds[NUM_REARLEDS / 2 + cc  ] = CHSV(scolor, 255 , 0 );
+      cc++;
+      continue;
+    }
+  }
+  }
+*/
+//REAR BACK-SLIDE
+/*
+  void REAR_backslide() {
+  uint8_t scolor = color;
+  uint8_t cc = 0;
+  while (cc <= (NUM_REARLEDS ) / 2 ) {
+    uint8_t scolor = color;
+    if (cc >= STOP_START  ) {
+      cc++;
+      continue;
+    }
+    if (cc == 0 ) {
+      REARleds[cc] = CHSV(scolor, 255 , 255 );
+      REARleds[NUM_REARLEDS - cc - 1 ] = CHSV(scolor, 255 , 255 );
+      FastLED.show();
+      delay(sdtime );
+      REARleds[cc] = CHSV(scolor, 255 , 0 );
+      REARleds[NUM_REARLEDS - cc - 1  ] = CHSV(scolor, 255 , 0 );
+      cc++;
+      continue;
+    }
+    REARleds[cc] = CHSV(scolor, 255 , 255 );
+    REARleds[cc - 1] = CHSV(scolor, 255 , 255 );
+    REARleds[NUM_REARLEDS - cc - 1 ] = CHSV(scolor, 255 , 255 );
+    REARleds[NUM_REARLEDS - cc  ] = CHSV(scolor, 255 , 255 );
+    FastLED.show();
+    delay(sdtime );
+    REARleds[cc] = CHSV(scolor, 255 , 0 );
+    REARleds[cc - 1] = CHSV(scolor, 255 , 0 );
+    REARleds[NUM_REARLEDS - cc - 1  ] = CHSV(scolor, 255 , 0 );
+    REARleds[NUM_REARLEDS - cc   ] = CHSV(scolor, 255 , 0 );
+    if (cc == 10) {
+      REARleds[cc - 1] = CHSV(scolor, 255 , 255 );
+      REARleds[NUM_REARLEDS - cc  ] = CHSV(scolor, 255 , 255 );
+      FastLED.show();
+      delay(sdtime );
+      REARleds[cc - 1] = CHSV(scolor, 255 , 0 );
+      REARleds[NUM_REARLEDS - cc   ] = CHSV(scolor, 255 , 0 );
+    }
+    cc++;
+    if (Serial.available() > 0)
+      break;
+  }
+  }
+*/
+//SETS STOP LEDS RED
+void stoplight() {
+  for (uint8_t i = 0; i < NUM_REARLEDS; i++) {
+    if (i >= STOP_START && i <= STOP_END ) {
+      REARleds[i] = CRGB(0, 0 , 100 );
+    }
+  }
+  FastLED.show();
+}
+
+//REAR IDLE
+void REAR_idle() {
+  for (uint8_t i = 0; i < NUM_REARLEDS; i++) {
+    if (i >= STOP_START  &&  i <= STOP_END ) {
+      REARleds[i] = CRGB(0, 0 , 100 );
+    }
+  }
+  FastLED.show();
+}
+
+//CLEAR ALL LEDS
+void clearleds() {
+  for (uint8_t i = 0; i < NUM_REARLEDS; i++) {
+    REARleds[i] = CRGB(0, 0 , 0 );
+  }
+  for (uint8_t i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CRGB(0, 0 , 0 );
+  }
+  FastLED.show();
+}
+
+// LEFT SIGNAL - HALF FADE
+void turnleft() {
+  for (uint8_t val = 0; val < 255; val++) {
+    for (uint8_t i = 0; i < STOP_START; i++) {
+      REARleds[i] = CHSV(color, 255 , val );
+    }
+    for (uint8_t i = 0; i < NUM_LEDS / 2 + 1; i++) {
+      if (i == LEFT_HEADER_START )
+        i = i + HEADER_COUNT;
+      leds[i] = CHSV(color, 255 , val );
+    }
+    if (Serial.available() > 0)
+      break;
+    FastLED.show();
+    delay(ttime);
+  }
+  for (uint8_t val = 255; val > 0; val--) {
+    for (uint8_t i = 0; i < STOP_START ; i++) {
+      REARleds[i] = CHSV(color, 255 , val );
+    }
+    for (uint8_t i = 0; i < NUM_LEDS / 2 + 1; i++) {
+      if (i == LEFT_HEADER_START )
+        i = i + HEADER_COUNT;
+      leds[i] = CHSV(color, 255 , val );
+    }
+    if (Serial.available() > 0)
+      break;
+    FastLED.show();
+    delay(ttime);
+  }
+}
+
+// RIGHT SIGNAL - HALF FADE
+void turnright() {
+  for (uint8_t val = 0; val < 255; val++) {
+    for (uint8_t i = STOP_END + 1; i < NUM_REARLEDS; i++) {
+      REARleds[i] = CHSV(color, 255 , val );
+    }
+    for (uint8_t i = NUM_LEDS / 2; i < NUM_LEDS; i++) {
+      if (i == RIGHT_HEADER_START )
+        i = i + HEADER_COUNT;
+      leds[i] = CHSV(color, 255 , val );
+    }
+    if (Serial.available() > 0)
+      break;
+    FastLED.show();
+    delay(ttime);
+  }
+  for (uint8_t val = 255; val > 0; val--) {
+    for (uint8_t i = STOP_END + 1; i < NUM_REARLEDS; i++) {
+      REARleds[i] = CHSV(color, 255 , val );
+    }
+    for (uint8_t i = NUM_LEDS / 2; i < NUM_LEDS; i++) {
+      if (i == RIGHT_HEADER_START )
+        i = i + HEADER_COUNT;
+      leds[i] = CHSV(color, 255 , val );
+    }
+    if (Serial.available() > 0)
+      break;
+    FastLED.show();
+    delay(ttime);
+  }
+}
+
+//FULL FADE
+void fullfade() {
+  for (uint8_t val = 0; val < 255; val++) {
+    for (uint8_t i = 0; i < NUM_REARLEDS; i++) {
+      REARleds[i] = CHSV(color, 255 , val );
+    }
+    for (uint8_t i = 0; i < NUM_LEDS; i++) {
+      leds[i] = CHSV(color, 255 , val );
+    }
+    if (Serial.available() > 0)
+      break;
+    FastLED.show();
+    delay(fftime);
+  }
+  for (uint8_t val = 255; val > 0; val--) {
+    for (uint8_t i = 0; i < NUM_REARLEDS; i++) {
+      REARleds[i] = CHSV(color, 255 , val );
+    }
+    for (uint8_t i = 0; i < NUM_LEDS; i++) {
+      leds[i] = CHSV(color, 255 , val );
+    }
+    if (Serial.available() > 0)
+      break;
+    FastLED.show();
+    delay(fftime);
+  }
+}
+
+//SABIT
+void solid() {
+  for (uint8_t i = 0; i < NUM_REARLEDS; i++) {
+    REARleds[i] = CHSV(color, 255 , 255 );
+  }
+  for (uint8_t i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CHSV(color, 255 , 255 );
+  }
+  FastLED.show();
+}
